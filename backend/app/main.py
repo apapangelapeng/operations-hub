@@ -6,7 +6,6 @@ import time
 from contextlib import asynccontextmanager
 from datetime import datetime
 from pathlib import Path
-from typing import Annotated
 
 import httpx
 from fastapi import Depends, FastAPI, HTTPException, Query, Request, Response
@@ -27,6 +26,7 @@ from app.models import (
     Session,
     StripeEvent,
     User,
+    new_id,
 )
 from app.permissions import has_permission
 from app.schemas import (
@@ -702,7 +702,9 @@ def create_refund(
     )
     if existing:
         raise HTTPException(status_code=409, detail="An active full refund request already exists")
+    refund_id = new_id()
     refund = RefundRequest(
+        id=refund_id,
         payment_id=payment.id,
         amount=payment.amount,
         currency=payment.currency,
@@ -713,11 +715,9 @@ def create_refund(
         status="pending_approval"
         if payment.amount > 10_000 or payment.currency != "usd"
         else "pending_review",
-        idempotency_key="pending",
+        idempotency_key=f"operations-hub-refund-{refund_id}",
     )
     db.add(refund)
-    db.flush()
-    refund.idempotency_key = f"operations-hub-refund-{refund.id}"
     add_audit(
         db,
         user,
