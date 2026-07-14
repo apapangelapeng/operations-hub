@@ -60,6 +60,18 @@ X-Company-User-Email
 
 Fixture identities are never used in `company_headers` mode.
 
+The demo login is passwordless. Choose one of these seven cards:
+
+| Account | Email | Access |
+| --- | --- | --- |
+| Super Admin | `superadmin@ops.local` | All modules |
+| KYC Admin | `kyc.admin@ops.local` | KYC administration and second review |
+| KYC User | `kyc.user@ops.local` | KYC queue and standard review |
+| Refund Admin | `refund.admin@ops.local` | Refund approval, execution, and reconciliation |
+| Refund User | `refund.user@ops.local` | Refund requests and standard execution |
+| Feature Flags Admin | `flags.admin@ops.local` | All Feature Flag environments |
+| Feature Flags User | `flags.user@ops.local` | Non-Production Feature Flag editing |
+
 ## Docker
 
 ```bash

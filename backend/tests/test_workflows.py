@@ -126,7 +126,7 @@ def test_production_flag_change_requires_reason_and_is_audited(client: TestClien
 
 
 def test_kyc_high_risk_approval_requires_distinct_second_reviewer(client: TestClient):
-    login(client, "kyc.analyst@ops.local")
+    login(client, "kyc.user@ops.local")
     case = client.get("/api/kyc/cases/case-1002").json()
     assert case["pii_revealed"] is True
 
@@ -151,7 +151,7 @@ def test_kyc_high_risk_approval_requires_distinct_second_reviewer(client: TestCl
     assert recommendation.json()["status"] == "pending_second_review"
 
     logout(client)
-    login(client, "kyc.l2@ops.local")
+    login(client, "kyc.admin@ops.local")
     pending = client.get("/api/kyc/cases/case-1002").json()
     confirmed = client.post(
         "/api/kyc/cases/case-1002/second-review",
@@ -191,7 +191,7 @@ def test_kyc_reviewer_cannot_confirm_own_recommendation(client: TestClient):
 
 
 def test_full_refund_and_above_threshold_approval(client: TestClient):
-    login(client, "refund.agent@ops.local")
+    login(client, "refund.user@ops.local")
     small = client.post(
         "/api/refunds",
         json={
@@ -222,7 +222,7 @@ def test_full_refund_and_above_threshold_approval(client: TestClient):
     assert client.post(f"/api/refunds/{large_id}/execute").status_code == 403
 
     logout(client)
-    login(client, "refund.approver@ops.local")
+    login(client, "refund.admin@ops.local")
     approval = client.post(
         f"/api/refunds/{large_id}/approve",
         json={"approved": True, "note": "Policy and supporting evidence verified."},
@@ -238,7 +238,7 @@ def test_full_refund_and_above_threshold_approval(client: TestClient):
         assert stored.idempotency_key == f"operations-hub-refund-{large_id}"
 
 
-def test_audit_officer_cannot_access_feature_flags(client: TestClient):
-    login(client, "audit@ops.local")
+def test_kyc_user_cannot_access_feature_flags(client: TestClient):
+    login(client, "kyc.user@ops.local")
     response = client.get("/api/feature-flags?environment=production")
     assert response.status_code == 403

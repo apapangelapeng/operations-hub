@@ -11,11 +11,21 @@ export async function api<T>(
   path: string,
   options: RequestInit = {},
 ): Promise<T> {
+  const pageUrl = new URL(window.location.href);
   const headers = new Headers(options.headers);
+  if (pageUrl.username && !headers.has("Authorization")) {
+    headers.set(
+      "Authorization",
+      `Basic ${btoa(`${pageUrl.username}:${pageUrl.password}`)}`,
+    );
+  }
+  pageUrl.username = "";
+  pageUrl.password = "";
+  const requestUrl = new URL(path, pageUrl);
   if (options.body && !headers.has("Content-Type")) {
     headers.set("Content-Type", "application/json");
   }
-  const response = await fetch(path, {
+  const response = await fetch(requestUrl, {
     ...options,
     credentials: "include",
     headers,

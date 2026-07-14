@@ -6,27 +6,29 @@ from app.models import FeatureFlag, FeatureFlagEnvironment, KycCase, RefundPayme
 
 
 USERS = [
-    ("user-super", "Alex Morgan", "superadmin@ops.local", "super_admin"),
-    ("user-analyst", "Jordan Lee", "kyc.analyst@ops.local", "kyc_analyst"),
-    ("user-l2", "Riley Chen", "kyc.l2@ops.local", "kyc_l2"),
-    ("user-audit", "Casey Patel", "audit@ops.local", "audit_officer"),
-    ("user-refund-support", "Taylor Brooks", "refund.support@ops.local", "refund_support"),
-    ("user-refund-agent", "Morgan Diaz", "refund.agent@ops.local", "refund_agent"),
-    ("user-refund-approver", "Avery Kim", "refund.approver@ops.local", "refund_approver"),
-    ("user-refund-finance", "Jamie Ross", "refund.finance@ops.local", "refund_finance"),
-    ("user-flags-viewer", "Emma Davis", "flags.viewer@ops.local", "flags_viewer"),
-    ("user-flags-editor", "Noah Williams", "flags.editor@ops.local", "flags_editor"),
-    ("user-flags-admin", "Maya Chen", "flags.admin@ops.local", "flags_admin"),
+    ("user-super", "Super Admin", "superadmin@ops.local", "super_admin"),
+    ("user-kyc-admin", "KYC Admin", "kyc.admin@ops.local", "kyc_l2"),
+    ("user-kyc-user", "KYC User", "kyc.user@ops.local", "kyc_analyst"),
+    ("user-refund-admin", "Refund Admin", "refund.admin@ops.local", "refund_admin"),
+    ("user-refund-user", "Refund User", "refund.user@ops.local", "refund_agent"),
+    ("user-flags-admin", "Feature Flags Admin", "flags.admin@ops.local", "flags_admin"),
+    ("user-flags-user", "Feature Flags User", "flags.user@ops.local", "flags_editor"),
 ]
 
 
 def seed_database(db: Session) -> None:
-    if db.query(User).count() > 0:
-        return
-
+    existing_emails = {user.email for user in db.query(User).all()}
     for user_id, name, email, role in USERS:
-        db.add(User(id=user_id, name=name, email=email, role=role))
+        if email not in existing_emails:
+            db.add(User(id=user_id, name=name, email=email, role=role))
     db.flush()
+
+    if db.query(KycCase).count() > 0:
+        db.query(KycCase).filter(KycCase.assigned_to == "user-analyst").update(
+            {"assigned_to": "user-kyc-user"}
+        )
+        db.commit()
+        return
 
     cases = [
         KycCase(
@@ -65,7 +67,7 @@ def seed_database(db: Session) -> None:
             country="GB",
             risk="high",
             status="in_review",
-            assigned_to="user-analyst",
+            assigned_to="user-kyc-user",
             sla_due_at=datetime.utcnow() + timedelta(hours=2),
             flags=["High-risk jurisdiction link", "PEP screening hit"],
             screening_hits=[
@@ -92,7 +94,7 @@ def seed_database(db: Session) -> None:
             country="ES",
             risk="low",
             status="needs_information",
-            assigned_to="user-analyst",
+            assigned_to="user-kyc-user",
             sla_due_at=datetime.utcnow() + timedelta(hours=18),
             flags=["Document expiry approaching"],
             screening_hits=[],

@@ -41,7 +41,7 @@ from app.schemas import (
     RefundCreateRequest,
     ScreeningDispositionRequest,
 )
-from app.seed import seed_database
+from app.seed import USERS, seed_database
 
 
 @asynccontextmanager
@@ -64,6 +64,7 @@ app.add_middleware(
 ENVIRONMENTS = {"development", "staging", "production"}
 RISK_LEVELS = {"low", "medium", "high"}
 REFUND_REASONS = {"duplicate", "fraudulent", "requested_by_customer", "service_issue"}
+DEMO_EMAILS = [email for _, _, email, _ in USERS]
 
 
 def add_audit(
@@ -209,12 +210,23 @@ def health() -> dict:
 def personas(db: DatabaseSession = Depends(get_db)) -> dict:
     if AUTH_MODE != "demo":
         return {"auth_mode": AUTH_MODE, "users": []}
-    users = db.query(User).filter(User.active.is_(True)).order_by(User.role, User.name).all()
+    users_by_email = {
+        user.email: user
+        for user in db.query(User)
+        .filter(User.active.is_(True), User.email.in_(DEMO_EMAILS))
+        .all()
+    }
     return {
         "auth_mode": AUTH_MODE,
         "users": [
-            {"id": user.id, "name": user.name, "email": user.email, "role": user.role}
-            for user in users
+            {
+                "id": users_by_email[email].id,
+                "name": users_by_email[email].name,
+                "email": users_by_email[email].email,
+                "role": users_by_email[email].role,
+            }
+            for email in DEMO_EMAILS
+            if email in users_by_email
         ],
     }
 
@@ -227,6 +239,8 @@ def login(
 ) -> dict:
     if AUTH_MODE != "demo":
         raise HTTPException(status_code=404, detail="Company authentication is enabled")
+    if data.email.lower() not in DEMO_EMAILS:
+        raise HTTPException(status_code=401, detail="Unknown fixture identity")
     user = db.query(User).filter(User.email == data.email.lower(), User.active.is_(True)).first()
     if not user:
         raise HTTPException(status_code=401, detail="Unknown fixture identity")

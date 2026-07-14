@@ -4,6 +4,19 @@ import { useState } from "react";
 import { useAuth } from "../context/AuthState";
 import { humanize } from "../lib/api";
 
+function accountLabel(role: string): string {
+  const labels: Record<string, string> = {
+    super_admin: "All apps · Superuser",
+    kyc_l2: "KYC · Admin",
+    kyc_analyst: "KYC · User",
+    refund_admin: "Refunds · Admin",
+    refund_agent: "Refunds · User",
+    flags_admin: "Feature Flags · Admin",
+    flags_editor: "Feature Flags · User",
+  };
+  return labels[role] ?? humanize(role);
+}
+
 export function LoginPage() {
   const { personas, login } = useAuth();
   const [busy, setBusy] = useState<string | null>(null);
@@ -49,11 +62,11 @@ export function LoginPage() {
 
       <section className="login-panel">
         <div className="login-panel-inner">
-          <span className="eyebrow">Local development</span>
-          <h2>Choose a fixture identity</h2>
+          <span className="eyebrow">Passwordless demo access</span>
+          <h2>Choose one of 7 demo accounts</h2>
           <p className="muted">
-            Personas simulate company identity claims and server-enforced
-            capabilities. They are disabled in production.
+            Click an account to sign in—no password is required. Each account
+            demonstrates its server-enforced app permissions.
           </p>
           {error && <div className="alert danger">{error}</div>}
           <div className="persona-grid">
@@ -70,7 +83,7 @@ export function LoginPage() {
                 </span>
                 <span>
                   <strong>{persona.name}</strong>
-                  <small>{humanize(persona.role)}</small>
+                  <small>{accountLabel(persona.role)}</small>
                 </span>
                 <ArrowRight size={18} />
               </button>

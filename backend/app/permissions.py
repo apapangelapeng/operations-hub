@@ -53,6 +53,18 @@ ROLE_PERMISSIONS: dict[str, set[str]] = {
         "refunds.retry",
         "audit.refunds",
     },
+    "refund_admin": {
+        "refunds.access",
+        "refunds.read",
+        "refunds.request",
+        "refunds.execute_standard",
+        "refunds.approve",
+        "refunds.execute_approved",
+        "refunds.retry",
+        "refunds.reconcile",
+        "refunds.export",
+        "audit.refunds",
+    },
     "refund_finance": {
         "refunds.access",
         "refunds.read",
